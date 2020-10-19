@@ -9,7 +9,7 @@
         @pointerdown="down"
         @pointerup="up"
         @pointermove="move"
-        :style="`transform: translate(${offset.x}px, ${offset.y}px) scale(${scale}) translate(-50%, -50%);`"
+        :style="matrix"
       ></canvas>
       <div
         v-show="space"
@@ -38,6 +38,7 @@
       </select>
       <button @click="clear">Clear</button>
       <button @click="save">Save</button>
+      <div>x{{scale.toFixed(2 )}}</div>
       <select v-model.number="scale">
         <option>0.01</option>
         <option>0.05</option>
@@ -50,6 +51,7 @@
 </template>
 
 <script>
+import { Rect, Vec2, Transform } from "paintvec";
 let ctx = null;
 let canvas = null;
 
@@ -59,14 +61,14 @@ export default {
       drag: false,
       old: null,
       eraser: false,
-      color: "black",
+      color: "#000000",
       lineWidth: 100,
-      scale: 0.1,
       offset: {
         x: 200,
         y: 200
       },
-      space: false
+      space: false,
+      transformRaw: new Transform().members //no-op
     };
   },
   watch: {
@@ -77,13 +79,43 @@ export default {
       ctx.lineWidth = w;
     }
   },
+  computed: {
+    matrix() {
+      return { transform: this.transform.toCSSMatrixString() };
+    },
+    transform: {
+      get() {
+        return new Transform(...this.transformRaw);
+      },
+      set(newValue) {
+        this.transformRaw = newValue.members;
+      }
+    },
+    scale() {
+      return new Rect(new Vec2(0, 0), new Vec2(1, 1)).transform(this.transform)
+        .width;
+    }
+  },
   methods: {
     onWheel(ev) {
+      const target_rect = ev.currentTarget.getBoundingClientRect();
+      const x = ev.clientX - target_rect.left;
+      const y = ev.clientY - target_rect.top;
+
+      // taken from d3.zoom 少しマイルドかも
       let delta =
         -event.deltaY *
         (event.deltaMode === 1 ? 0.05 : event.deltaMode ? 1 : 0.002) *
         (event.ctrlKey ? 10 : 1);
-      this.scale *= Math.pow(2, delta);
+      let scale = Math.pow(2, delta);
+
+      // const scale = Math.pow(0.5, ev.deltaY / 256);
+
+      const center = new Vec2(x, y);
+      this.transform = this.transform
+        .translate(center.neg)
+        .scale(new Vec2(scale, scale))
+        .translate(center);
     },
     wrapperDown(ev) {
       if (this.space) {
@@ -94,9 +126,7 @@ export default {
           x: ev.offsetX,
           y: ev.offsetY
         };
-        this.initial = {
-          ...this.offset
-        };
+        this.initial = this.transformRaw;
       }
     },
     wrapperUp(ev) {
@@ -104,13 +134,10 @@ export default {
     },
     wrapperMove(ev) {
       if (this.drag) {
-        this.offset.x = this.initial.x + ev.offsetX - this.old.x;
-        this.offset.y = this.initial.y + ev.offsetY - this.old.y;
-
-        // this.old = {
-        //   x: ev.offsetX,
-        //   y: ev.offsetY
-        // };
+        const startPos = new Vec2(this.old.x, this.old.y);
+        const pos = new Vec2(ev.offsetX, ev.offsetY);
+        const mouseDiff = pos.sub(startPos);
+        this.transform = new Transform(...this.initial).translate(mouseDiff);
       }
     },
     down(ev) {
@@ -162,7 +189,7 @@ export default {
     });
     ctx.lineCap = "round";
     ctx.lineWidth = this.lineWidth;
-    document.getElementById("app").focus()
+    document.getElementById("app").focus();
   }
 };
 </script>
@@ -176,7 +203,6 @@ canvas {
   touch-action: none;
   background: white;
   transform-origin: 0% 0%;
-  transform: translate(200px, 200px) scale(0.05) translate(-50%, -50%);
   position: absolute;
   left: 0;
   top: 0;
