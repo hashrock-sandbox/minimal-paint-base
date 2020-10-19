@@ -150,6 +150,7 @@ export default {
         x: ev.offsetX,
         y: ev.offsetY
       };
+      this.move(ev)
     },
     up() {
       this.drag = false;
