@@ -2,7 +2,31 @@
 <template>
   <div id="app" @keydown.space="space = true" @keyup.space="space = false" tabindex="0">
     <div class="wrapper">
-      <canvas ref="canvas" width="3200" height="3200" :style="matrix"></canvas>
+      <div class="wrapper__background" :style="{transform: matrix}"></div>
+      <img
+        class="wrapper__image"
+        v-for="(layer, idx) in backLayers"
+        :key="`back-${idx}`"
+        :src="layer.data"
+        :style="{transform: matrix, opacity: layer.opacity }"
+        v-show="layer.visible"
+      />
+      <canvas
+        class="wrapper__canvas"
+        ref="canvas"
+        width="3200"
+        height="3200"
+        :style="{transform: matrix, opacity: canvasOpacity}"
+        v-show="selectedLayer ? selectedLayer.visible : true"
+      ></canvas>
+      <img
+        class="wrapper__image"
+        v-for="(layer, idx) in frontLayers"
+        :key="idx"
+        :src="layer.data"
+        :style="{transform:matrix, opacity: layer.opacity}"
+        v-show="layer.visible"
+      />
       <div
         class="pointerEventLayer"
         :class="{grab: space, grabbing: (drag && space) || pan}"
@@ -30,14 +54,22 @@
       </select>
       <button @click="clear">Clear</button>
       <button @click="save">Save</button>
-      <div>x{{scale.toFixed(2 )}}</div>
-      <select v-model.number="scale">
-        <option>0.01</option>
-        <option>0.05</option>
-        <option>0.1</option>
-        <option>0.2</option>
-        <option>0.4</option>
-      </select>
+      <span>x{{scale.toFixed(2 )}}</span>
+      <div>
+        <div
+          v-for="(layer, idx) in layers"
+          :key="idx"
+          class="layer"
+          @click="selectLayer(idx)"
+          :class="{selected: idx === selectedLayerIndex}"
+        >
+          <img class="layer__thumb" :src="layer.data" width="30" />
+          <input type="checkbox" v-model="layer.visible" />
+          <div class="layer__label">Layer {{idx}}</div>
+          <input type="range" step="0.01" min="0" max="1" v-model="layer.opacity" />
+        </div>
+        <button @click="addLayer">Add layer</button>
+      </div>
     </div>
   </div>
 </template>
@@ -50,6 +82,8 @@ let canvas = null;
 export default {
   data() {
     return {
+      layers: [],
+      selectedLayerIndex: -1,
       drag: false,
       pan: false,
       old: null,
@@ -70,11 +104,26 @@ export default {
     },
     lineWidth(w) {
       ctx.lineWidth = w;
+    },
+    selectedLayerIndex(index) {
+      ctx.clearRect(0, 0, 3200, 3200);
+      const img = new Image();
+      img.src = this.layers[index].data;
+      ctx.drawImage(img, 0, 0);
     }
   },
   computed: {
+    selectedLayer() {
+      return this.layers[this.selectedLayerIndex];
+    },
+    backLayers() {
+      return this.layers.slice(0, this.selectedLayerIndex);
+    },
+    frontLayers() {
+      return this.layers.slice(this.selectedLayerIndex + 1);
+    },
     matrix() {
-      return { transform: this.transform.toCSSMatrixString() };
+      return this.transform.toCSSMatrixString();
     },
     transform: {
       get() {
@@ -87,6 +136,12 @@ export default {
     scale() {
       return new Rect(new Vec2(0, 0), new Vec2(1, 1)).transform(this.transform)
         .width;
+    },
+    canvasOpacity() {
+      if (this.selectedLayer) {
+        return this.selectedLayer.opacity;
+      }
+      return 1;
     }
   },
   methods: {
@@ -153,6 +208,11 @@ export default {
         this.dragEnd();
         return;
       }
+      if (this.drag) {
+        this.layers[this.selectedLayerIndex].data = canvas.toDataURL(
+          "image/png"
+        );
+      }
       this.drag = false;
     },
     move(ev) {
@@ -190,15 +250,39 @@ export default {
       a.href = canvas.toDataURL("image/png");
       a.download = "download.png";
       a.click();
+    },
+    createBlankLayer() {
+      //注意！現在のcanvasをクリアします
+      //iOSのcanvas面積節約のため仕方なくです
+      const blank = new Image(3200, 3200);
+      ctx.clearRect(0, 0, 3200, 3200);
+      ctx.drawImage(blank, 0, 0);
+      return canvas.toDataURL("image/png");
+    },
+    addLayer() {
+      this.layers.push({
+        visible: true,
+        opacity: 1,
+        data: this.createBlankLayer()
+      });
+      this.selectedLayerIndex = this.layers.length - 1;
+    },
+    selectLayer(index) {
+      this.selectedLayerIndex = index;
     }
   },
   mounted() {
     canvas = this.$refs.canvas;
-    ctx = canvas.getContext("2d", {
-      desynchronized: true
-    });
+    ctx = canvas.getContext("2d");
     ctx.lineCap = "round";
     ctx.lineWidth = this.lineWidth;
+
+    this.layers.push({
+      visible: true,
+      opacity: 1,
+      data: this.createBlankLayer()
+    });
+    this.selectedLayerIndex = 0;
     document.getElementById("app").focus();
   }
 };
@@ -209,9 +293,23 @@ body {
   background: #333;
   color: white;
 }
-canvas {
-  touch-action: none;
+.wrapper__background {
+  transform-origin: 0% 0%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3200px;
+  height: 3200px;
   background: white;
+}
+.wrapper__image {
+  transform-origin: 0% 0%;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.wrapper__canvas {
+  touch-action: none;
   transform-origin: 0% 0%;
   position: absolute;
   left: 0;
@@ -241,5 +339,25 @@ canvas {
 
 #app {
   outline: none;
+}
+.layer {
+  width: 300px;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid black;
+}
+.layer.selected {
+  background: #aad;
+}
+.layer__thumb {
+  background: white;
+  width: 50px;
+}
+.layer__label {
+  color: black;
+  margin: 0.25em;
 }
 </style>
