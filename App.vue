@@ -2,22 +2,13 @@
 <template>
   <div id="app" @keydown.space="space = true" @keyup.space="space = false" tabindex="0">
     <div class="wrapper" @wheel="onWheel">
-      <canvas
-        ref="canvas"
-        width="3200"
-        height="3200"
+      <canvas ref="canvas" width="3200" height="3200" :style="matrix"></canvas>
+      <div
+        class="grabLayer"
+        :class="{grab: space, grabbing: (drag && space) || pan}"
         @pointerdown="down"
         @pointerup="up"
         @pointermove="move"
-        :style="matrix"
-      ></canvas>
-      <div
-        v-show="space"
-        class="grabLayer"
-        :class="{grabbing: drag}"
-        @pointerdown="wrapperDown"
-        @pointermove="wrapperMove"
-        @pointerup="wrapperUp"
       ></div>
     </div>
     <div>
@@ -59,6 +50,7 @@ export default {
   data() {
     return {
       drag: false,
+      pan: false,
       old: null,
       eraser: false,
       color: "#000000",
@@ -117,59 +109,75 @@ export default {
         .scale(new Vec2(scale, scale))
         .translate(center);
     },
-    wrapperDown(ev) {
-      if (this.space) {
-        ev.target.setPointerCapture(ev.pointerId);
-
-        this.drag = true;
-        this.old = {
-          x: ev.offsetX,
-          y: ev.offsetY
-        };
-        this.initial = this.transformRaw;
-      }
+    dragMove(ev) {
+      const startPos = new Vec2(this.old.x, this.old.y);
+      const pos = new Vec2(ev.offsetX, ev.offsetY);
+      const mouseDiff = pos.sub(startPos);
+      this.transform = new Transform(...this.initial).translate(mouseDiff);
     },
-    wrapperUp(ev) {
-      this.drag = false;
-    },
-    wrapperMove(ev) {
-      if (this.drag) {
-        const startPos = new Vec2(this.old.x, this.old.y);
-        const pos = new Vec2(ev.offsetX, ev.offsetY);
-        const mouseDiff = pos.sub(startPos);
-        this.transform = new Transform(...this.initial).translate(mouseDiff);
-      }
-    },
-    down(ev) {
-      if (this.space) {
-        return;
-      }
-      canvas.setPointerCapture(ev.pointerId);
-      this.drag = true;
+    dragStart(ev) {
+      this.pan = true;
       this.old = {
         x: ev.offsetX,
         y: ev.offsetY
       };
-      this.move(ev)
+      this.initial = this.transformRaw;
     },
-    up() {
+    dragEnd() {
+      this.pan = false;
+    },
+    down(ev) {
+      ev.target.setPointerCapture(ev.pointerId);
+      if (ev.button === 1) {
+        this.dragStart(ev);
+        return;
+      }
+      if (this.space) {
+        this.dragStart(ev);
+        return;
+      }
+      this.drag = true;
+
+      const doc = new Vec2(ev.offsetX, ev.offsetY).transform(
+        this.transform.invert()
+      );
+      this.old = {
+        x: doc.x,
+        y: doc.y
+      };
+      this.move(ev);
+    },
+    up(ev) {
+      if (this.pan) {
+        this.dragEnd();
+        return;
+      }
       this.drag = false;
     },
     move(ev) {
-      if (this.space) {
+      if (this.pan) {
+        this.dragMove(ev);
+        return;
+      }
+
+      if (this.space && this.drag) {
+        this.dragMove(ev);
         return;
       }
 
       if (this.drag) {
+        const doc = new Vec2(ev.offsetX, ev.offsetY).transform(
+          this.transform.invert()
+        );
         ctx.beginPath();
         ctx.strokeStyle = this.color;
         ctx.moveTo(this.old.x, this.old.y);
-        ctx.lineTo(ev.offsetX, ev.offsetY);
+        ctx.lineTo(doc.x, doc.y);
         ctx.stroke();
         // ctx.closePath();
         this.old = {
-          x: ev.offsetX,
-          y: ev.offsetY
+          x: doc.x,
+          y: doc.y
         };
       }
     },
@@ -222,6 +230,8 @@ canvas {
   top: 0;
   width: 400px;
   height: 400px;
+}
+.grabLayer.grab {
   cursor: grab;
 }
 .grabLayer.grabbing {
