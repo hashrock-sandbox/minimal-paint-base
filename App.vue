@@ -1,14 +1,15 @@
 <!-- Use preprocessors via the lang attribute! e.g. <template lang="pug"> -->
 <template>
   <div id="app" @keydown.space="space = true" @keyup.space="space = false" tabindex="0">
-    <div class="wrapper" @wheel="onWheel">
+    <div class="wrapper">
       <canvas ref="canvas" width="3200" height="3200" :style="matrix"></canvas>
       <div
-        class="grabLayer"
+        class="pointerEventLayer"
         :class="{grab: space, grabbing: (drag && space) || pan}"
         @pointerdown="down"
         @pointerup="up"
         @pointermove="move"
+        @wheel="onWheel"
       ></div>
     </div>
     <div>
@@ -224,17 +225,17 @@ canvas {
   position: relative;
 }
 
-.grabLayer {
+.pointerEventLayer {
   position: absolute;
   left: 0;
   top: 0;
   width: 400px;
   height: 400px;
 }
-.grabLayer.grab {
+.pointerEventLayer.grab {
   cursor: grab;
 }
-.grabLayer.grabbing {
+.pointerEventLayer.grabbing {
   cursor: grabbing;
 }
 
