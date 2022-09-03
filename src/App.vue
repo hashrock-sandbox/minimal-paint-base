@@ -1,47 +1,50 @@
 <!-- Use preprocessors via the lang attribute! e.g. <template lang="pug"> -->
   <template>
-  <div class="wrapper" @keydown.space="space = true" @keyup.space="space = false" tabindex="0">
-    <div class="wrapper__background" :style="{ transform: matrix }"></div>
-    <img class="wrapper__image" v-for="(layer, idx) in backLayers" :key="`back-${idx}`" :src="layer.data"
-      :style="{ transform: matrix, opacity: layer.opacity }" v-show="layer.visible" />
-    <canvas class="wrapper__canvas" ref="canvas" width="3200" height="3200"
-      :style="{ transform: matrix, opacity: canvasOpacity }"
-      v-show="selectedLayer ? selectedLayer.visible : true"></canvas>
-    <img class="wrapper__image" v-for="(layer, idx) in frontLayers" :key="idx" :src="layer.data"
-      :style="{ transform: matrix, opacity: layer.opacity }" v-show="layer.visible" />
-    <div class="pointerEventLayer" :class="{ grab: space, grabbing: (drag && space) || pan }" @pointerdown="down"
-      @pointerup="up" @pointermove="move" @wheel="onWheel"></div>
-  </div>
-  <div>
-    <input type="color" v-model="color" />
-    <label>
-      <input type="checkbox" v-model="eraser" />Eraser
-    </label>
-    <select v-model.number="lineWidth">
-      <option>1</option>
-      <option>2</option>
-      <option>3</option>
-      <option>5</option>
-      <option>8</option>
-      <option>13</option>
-      <option>21</option>
-      <option>50</option>
-      <option>100</option>
-    </select>
-    <button @click="clear">Clear</button>
-    <button @click="save">Save</button>
-    <span>x{{ scale.toFixed(2) }}</span>
-    <div>
-      <div v-for="(layer, idx) in layers" :key="idx" class="layer" @click="selectLayer(idx)"
-        :class="{ selected: idx === selectedLayerIndex }">
-        <img class="layer__thumb" :src="layer.data" width="30" />
-        <input type="checkbox" v-model="layer.visible" />
-        <div class="layer__label">Layer {{ idx }}</div>
-        <input type="range" step="0.01" min="0" max="1" v-model="layer.opacity" />
+  <div class="wrapper" @keydown.space="space = true" @keyup.space="space = false">
+    <div class="pane--left" tabindex="0">
+      <div class="wrapper__background" :style="{ transform: matrix }"></div>
+      <img class="wrapper__image" v-for="(layer, idx) in backLayers" :key="`back-${idx}`" :src="layer.data"
+        :style="{ transform: matrix, opacity: layer.opacity }" v-show="layer.visible" />
+      <canvas class="wrapper__canvas" ref="canvas" width="3200" height="3200"
+        :style="{ transform: matrix, opacity: canvasOpacity }"
+        v-show="selectedLayer ? selectedLayer.visible : true"></canvas>
+      <img class="wrapper__image" v-for="(layer, idx) in frontLayers" :key="idx" :src="layer.data"
+        :style="{ transform: matrix, opacity: layer.opacity }" v-show="layer.visible" />
+      <div class="pointerEventLayer" :class="{ grab: space, grabbing: (drag && space) || pan }" @pointerdown="down"
+        @pointerup="up" @pointermove="move" @wheel="onWheel"></div>
+    </div>
+    <div class="pane--right">
+      <input type="color" v-model="color" />
+      <label>
+        <input type="checkbox" v-model="eraser" />Eraser
+      </label>
+      <select v-model.number="lineWidth">
+        <option>1</option>
+        <option>2</option>
+        <option>3</option>
+        <option>5</option>
+        <option>8</option>
+        <option>13</option>
+        <option>21</option>
+        <option>50</option>
+        <option>100</option>
+      </select>
+      <button @click="clear">Clear</button>
+      <button @click="save">Save</button>
+      <span>x{{ scale.toFixed(2) }}</span>
+      <div class="layer__wrapper">
+        <div v-for="(layer, idx) in layers" :key="idx" class="layer" @click="selectLayer(idx)"
+          :class="{ selected: idx === selectedLayerIndex }">
+          <img class="layer__thumb" :src="layer.data" width="30" />
+          <input type="checkbox" v-model="layer.visible" />
+          <div class="layer__label">Layer {{ idx }}</div>
+          <!-- <input type="range" step="0.01" min="0" max="1" v-model="layer.opacity" /> -->
+        </div>
+        <button @click="addLayer">Add layer</button>
       </div>
-      <button @click="addLayer">Add layer</button>
     </div>
   </div>
+
 </template>
   
   <script>
@@ -259,9 +262,20 @@ export default {
 </script>
   
   <style>
-  body {
+  body,
+  html {
+    height: 100%;
+  }
+
+  body{
+    margin: 0;
+    display: flex;
     background: #333;
-    color: white;
+  }
+
+  #app{
+    display: flex;
+    flex: 1;
   }
   
   .wrapper__background {
@@ -289,10 +303,23 @@ export default {
     top: 0;
   }
   
+  
   .wrapper {
+    display: flex;
+    height: 100%;
+    flex: 1;
+  }
+  
+  .pane--left {
+    flex: 1;
     background: #999;
-    width: 400px;
-    height: 400px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .pane--right {
+    background: #FFF;
+    width: 200px;
     overflow: hidden;
     position: relative;
   }
@@ -301,8 +328,8 @@ export default {
     position: absolute;
     left: 0;
     top: 0;
-    width: 400px;
-    height: 400px;
+    bottom: 0;
+    right: 0;
   }
   
   .pointerEventLayer.grab {
@@ -314,27 +341,38 @@ export default {
   }
   
   .layer {
-    width: 300px;
-    background: #ddd;
+    background: #fff;
     display: flex;
     align-items: center;
     cursor: pointer;
     user-select: none;
-    border-bottom: 1px solid black;
+    font-size: 0.8em;
+    border-radius: 2px;
+    margin-bottom: 0.25em;
+  }
+  .layer:hover {
+    background: rgb(243, 243, 255);
   }
   
   .layer.selected {
-    background: #aad;
+    background: rgb(209, 209, 248);
   }
   
   .layer__thumb {
     background: white;
-    width: 50px;
+    width: 40px;
+    border: 1px solid #999;
+    margin: 2px;
   }
   
   .layer__label {
     color: black;
     margin: 0.25em;
+  }
+
+  .layer__wrapper{
+    padding: 0.25em;
+    background-color: #999;
   }
   </style>
   
