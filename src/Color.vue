@@ -1,5 +1,5 @@
 <template>
-  <svg viewBox="0 0 200 300" width="200" height="300" ref="canv">
+  <svg viewBox="0 0 200 220" width="200" height="220" ref="canv">
     <defs>
       <linearGradient id="hsv1" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox"
         spreadMethod="repeat">

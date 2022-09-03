@@ -8,6 +8,9 @@
 - [ ] Layer
 - [ ] Undo / Redo
 
+## icons
+
+https://tabler-icons.io/
 
 ## License
 

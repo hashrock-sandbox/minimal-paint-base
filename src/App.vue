@@ -11,28 +11,30 @@
       <img class="wrapper__image" v-for="(layer, idx) in frontLayers" :key="idx" :src="layer.data"
         :style="{ transform: matrix, opacity: layer.opacity }" v-show="layer.visible" />
       <div class="pointerEventLayer" :class="{ grab: space, grabbing: (drag && space) || pan }" @pointerdown="down"
-        @pointerup="up" @pointermove="move" @wheel="onWheel"></div>
+        @pointerup="up" @pointermove="move" @wheel="onWheel" @touchmove.prevent @pointercancel="cancel"></div>
     </div>
     <div class="pane--right">
       <color @change="setColor" :initial-color="{ h: 188, s: 83, l: 50 }"></color>
       <!-- <input type="color" v-model="color" /> -->
-      <label>
-        <input type="checkbox" v-model="eraser" />Eraser
-      </label>
-      <select v-model.number="lineWidth">
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-        <option>5</option>
-        <option>8</option>
-        <option>13</option>
-        <option>21</option>
-        <option>50</option>
-        <option>100</option>
-      </select>
-      <button @click="clear">Clear</button>
-      <button @click="save">Save</button>
-      <span>x{{ scale.toFixed(2) }}</span>
+
+      <fieldset>
+        <input id="item-1" class="radio-inline__input" v-model="tool" type="radio" name="accessible-radio" value="pen" checked="checked"/>
+        <label class="radio-inline__label" for="item-1">
+          <img src="brush.svg" class="radio-inline__label__icon">
+        </label>
+        <input id="item-2" class="radio-inline__input" v-model="tool" type="radio" name="accessible-radio" value="eraser"/>
+        <label class="radio-inline__label" for="item-2">
+          <img src="eraser.svg" class="radio-inline__label__icon">
+        </label>
+      </fieldset>
+
+      <div class="pen-size__list">
+        <svg @click="setPenSize(penSize)" v-for="penSize in penSizeList" :key="penSize" class="pen-size__item" width="40" height="40" :class="{'selected': penSize === lineWidth}">
+          <circle cx="20" cy="13" :r="Math.min(penSize, 10)" fill="#333" />
+          <text x="20" y="34" font-size="10" text-anchor="middle" fill="black">{{penSize}}</text>
+        </svg>
+      </div>
+
       <div class="layer__wrapper">
         <div v-for="(layer, idx) in layers" :key="idx" class="layer" @click="selectLayer(idx)"
           :class="{ selected: idx === selectedLayerIndex }">
@@ -41,8 +43,22 @@
           <div class="layer__label">Layer {{ idx }}</div>
           <!-- <input type="range" step="0.01" min="0" max="1" v-model="layer.opacity" /> -->
         </div>
-        <button @click="addLayer">Add layer</button>
+        <button @click="addLayer">
+          <img src="file.svg" alt="New Layer" class="button__icon"> New Layer
+        </button>
       </div>
+
+      <div style="padding-top: 2rem;">
+        <button @click="clear">
+        <img src="trash.svg" alt="Clear" class="button__icon">
+        Clear</button>
+      <button @click="save">
+        <img src="download.svg" alt="Clear" class="button__icon">
+        Save</button>
+      <span>x{{ scale.toFixed(2) }}</span>
+
+      </div>
+
     </div>
   </div>
 
@@ -51,6 +67,10 @@
 <script>
 import { Rect, Vec2, Transform } from "paintvec";
 import color from "./Color.vue"
+
+const penSizeList = [
+  0.5, 1, 2, 3, 5, 8, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500
+];
 
 
 let ctx = null;
@@ -64,13 +84,14 @@ export default {
       drag: false,
       pan: false,
       old: null,
-      eraser: false,
       color: "#000000",
       lineWidth: 13,
+      penSizeList,
       offset: {
         x: 200,
         y: 200
       },
+      tool: "pen",
       space: false,
       transformRaw: new Transform().members //no-op
     };
@@ -93,6 +114,9 @@ export default {
     }
   },
   computed: {
+    eraser(){
+      return this.tool === "eraser"
+    },
     selectedLayer() {
       return this.layers[this.selectedLayerIndex];
     },
@@ -125,8 +149,14 @@ export default {
     }
   },
   methods: {
+    setPenSize(size) { 
+      this.lineWidth = size;
+    },
     setColor(color) { 
       this.color = color;
+    },
+    cancel(_){
+      this.drag = false;      
     },
     onWheel(ev) {
       const target_rect = ev.currentTarget.getBoundingClientRect();
@@ -280,7 +310,7 @@ export default {
   body {
     margin: 0;
     display: flex;
-    background: #333;
+    background: #333;    overscroll-behavior: none;
   }
   
   #app {
@@ -332,6 +362,7 @@ export default {
     width: 200px;
     overflow: hidden;
     position: relative;
+    padding: 4px;
   }
   
   .pointerEventLayer {
@@ -340,6 +371,7 @@ export default {
     top: 0;
     bottom: 0;
     right: 0;
+    touch-action: manipulation;
   }
   
   .pointerEventLayer.grab {
@@ -385,5 +417,64 @@ export default {
     padding: 0.25em;
     background-color: #999;
   }
+  .pen-size__item{
+    cursor: pointer;
+  }
+
+  .pen-size__item:hover{
+    background-color: rgb(241, 242, 255);
+  }
+  .pen-size__item.selected{
+    background-color: rgb(218, 222, 255);
+  }
+  fieldset{
+    border: none;
+    padding: 0;
+  }
+
+  .radio-inline__input {
+    clip: rect(1px, 1px, 1px, 1px);
+    position: absolute !important;
+  }
+
+  .radio-inline__label {
+    display: inline-flex;
+    height: 1.5em;
+    align-items: center;
+    padding: 0.25em 0.5em;
+    border-radius: 4px;
+  }
+
+  .radio-inline__label__icon{
+    height: 1em;
+  }
+
+  .radio-inline__input:checked + .radio-inline__label {
+    background: #98b2d4;
+    color: white;
+    text-shadow: 0 0 1px rgba(0,0,0,.7);
+  }
+
+  button{
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #999;
+    padding: 0.5em 0.75em;
+    border-radius: 4px;
+    font-size: 0.8em;
+  }
+  button:hover{
+    background-color: rgb(243, 243, 255);
+  }
+  button:active{
+    background-color: rgb(218, 222, 255);
+  }
+  .button__icon{
+    height: 1.5em;
+    margin-right: 0.25em;
+
+  }
+
   </style>
   
