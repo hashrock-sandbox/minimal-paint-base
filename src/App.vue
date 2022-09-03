@@ -14,7 +14,8 @@
         @pointerup="up" @pointermove="move" @wheel="onWheel"></div>
     </div>
     <div class="pane--right">
-      <input type="color" v-model="color" />
+      <color @change="setColor" :initial-color="{ h: 188, s: 83, l: 50 }"></color>
+      <!-- <input type="color" v-model="color" /> -->
       <label>
         <input type="checkbox" v-model="eraser" />Eraser
       </label>
@@ -47,8 +48,11 @@
 
 </template>
   
-  <script>
+<script>
 import { Rect, Vec2, Transform } from "paintvec";
+import color from "./Color.vue"
+
+
 let ctx = null;
 let canvas = null;
 
@@ -70,6 +74,9 @@ export default {
       space: false,
       transformRaw: new Transform().members //no-op
     };
+  },
+  components: {
+    color
   },
   watch: {
     eraser(n) {
@@ -118,6 +125,9 @@ export default {
     }
   },
   methods: {
+    setColor(color) { 
+      this.color = color;
+    },
     onWheel(ev) {
       const target_rect = ev.currentTarget.getBoundingClientRect();
       const x = ev.clientX - target_rect.left;
@@ -266,14 +276,14 @@ export default {
   html {
     height: 100%;
   }
-
-  body{
+  
+  body {
     margin: 0;
     display: flex;
     background: #333;
   }
-
-  #app{
+  
+  #app {
     display: flex;
     flex: 1;
   }
@@ -350,6 +360,7 @@ export default {
     border-radius: 2px;
     margin-bottom: 0.25em;
   }
+  
   .layer:hover {
     background: rgb(243, 243, 255);
   }
@@ -369,8 +380,8 @@ export default {
     color: black;
     margin: 0.25em;
   }
-
-  .layer__wrapper{
+  
+  .layer__wrapper {
     padding: 0.25em;
     background-color: #999;
   }
