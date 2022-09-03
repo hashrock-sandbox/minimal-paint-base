@@ -89,7 +89,7 @@
         old: null,
         eraser: false,
         color: "#000000",
-        lineWidth: 100,
+        lineWidth: 13,
         offset: {
           x: 200,
           y: 200
