@@ -1,7 +1,8 @@
 <template>
   <svg viewBox="0 0 200 300" width="200" height="300" ref="canv">
     <defs>
-      <linearGradient id="hsv1" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox" spreadMethod="repeat">
+      <linearGradient id="hsv1" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox"
+        spreadMethod="repeat">
         <stop offset="0%" stop-color="#ff0000" />
         <stop offset="16.7%" stop-color="#ffff00" />
         <stop offset="33.3%" stop-color="#00ff00" />
@@ -10,11 +11,13 @@
         <stop offset="83.3%" stop-color="#ff00ff" />
         <stop offset="100%" stop-color="#ff0000" />
       </linearGradient>
-      <linearGradient id="hsv2" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox" spreadMethod="repeat">
+      <linearGradient id="hsv2" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox"
+        spreadMethod="repeat">
         <stop offset="0%" :stop-color="slBox[0]" />
         <stop offset="100%" :stop-color="slBox[1]" />
       </linearGradient>
-      <linearGradient id="hsv3" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="objectBoundingBox" spreadMethod="repeat">
+      <linearGradient id="hsv3" x1="0%" y1="0%" x2="0%" y2="100%" gradientUnits="objectBoundingBox"
+        spreadMethod="repeat">
         <stop offset="0%" :stop-color="slBox[2]" />
         <stop offset="100%" :stop-color="slBox[3]" />
       </linearGradient>
@@ -22,43 +25,23 @@
     <rect rx="20" :fill="hsl" x="0" y="260" width="20" height="20" />
     <g>
       <rect x="0" y="0" width="200" height="200" fill="url(#hsv2)" />
-      <rect x="0" y="0" width="200" height="200" fill="url(#hsv3)"  @pointermove="moveSV" @pointerup="up" @pointerdown="downSV" />
-      <!-- <rect x="0" y="0" width="200" height="200" fill="none" /> -->
-      <circle style="pointer-events: none;" :cx="s * 200 / 100" :cy="(100 - v) * 200 / 100" r="5" stroke="black" fill="white" />
+      <rect x="0" y="0" width="200" height="200" fill="url(#hsv3)" @pointermove="moveSV" @pointerup="up"
+        @pointerdown="downSV" />
+      <circle style="pointer-events: none;" :cx="s * 200 / 100" :cy="(100 - v) * 200 / 100" r="5" stroke="black"
+        fill="white" />
     </g>
     <g transform="translate(0, 200)">
       <rect fill="url(#hsv1)" x="0" y="0" height="20" width="200" @pointermove="moveH" @pointerup="up"
         @pointerdown="downH" />
       <circle style="pointer-events: none;" :cx="h * 200 / 360" cy="10" r="5" stroke="black" fill="white" />
     </g>
-    <!-- <rect
-      fill="url(#hsv2)"
-      x="0"
-      y="40"
-      height="20"
-      width="200"
-      @pointermove="moveS"
-      @pointerup="up"
-      @pointerdown="downS"
-    />
-    <rect
-      fill="url(#hsv3)"
-      x="0"
-      y="60"
-      height="20"
-      width="200"
-      @pointermove="moveL"
-      @pointerup="up"
-      @pointerdown="downL"
-    /> -->
-
   </svg>
 </template>
 
 <script>
 // https://stackoverflow.com/questions/3423214/convert-hsb-hsv-color-to-hsl/54116681#54116681
-const hsl2hsv = (h,s,l,v=s*Math.min(l,1-l)+l) => [h, v?2-2*l/v:0, v];
-const hsv2hsl = (h,s,v,l=v-v*s/2, m=Math.min(l,1-l)) => [h,m?(v-l)/m:0,l];
+const hsl2hsv = (h, s, l, v = s * Math.min(l, 1 - l) + l) => [h, v ? 2 - 2 * l / v : 0, v];
+const hsv2hsl = (h, s, v, l = v - v * s / 2, m = Math.min(l, 1 - l)) => [h, m ? (v - l) / m : 0, l];
 
 export default {
   props: {
@@ -118,7 +101,7 @@ export default {
       pt.x = ev.clientX;
       pt.y = ev.clientY;
       return pt.matrixTransform(el.getScreenCTM().inverse()).y;
-    },    
+    },
     downH(ev) {
       ev.target.setPointerCapture(ev.pointerId);
       this.pressed = true;
