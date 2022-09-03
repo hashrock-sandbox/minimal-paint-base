@@ -20,11 +20,11 @@
       <fieldset>
         <input id="item-1" class="radio-inline__input" v-model="tool" type="radio" name="accessible-radio" value="pen" checked="checked"/>
         <label class="radio-inline__label" for="item-1">
-          <img src="brush.svg" class="radio-inline__label__icon">
+          <img src="/brush.svg" class="radio-inline__label__icon">
         </label>
         <input id="item-2" class="radio-inline__input" v-model="tool" type="radio" name="accessible-radio" value="eraser"/>
         <label class="radio-inline__label" for="item-2">
-          <img src="eraser.svg" class="radio-inline__label__icon">
+          <img src="/eraser.svg" class="radio-inline__label__icon">
         </label>
       </fieldset>
 
@@ -44,16 +44,16 @@
           <!-- <input type="range" step="0.01" min="0" max="1" v-model="layer.opacity" /> -->
         </div>
         <button @click="addLayer">
-          <img src="file.svg" alt="New Layer" class="button__icon"> New Layer
+          <img src="/file.svg" alt="New Layer" class="button__icon"> New Layer
         </button>
       </div>
 
       <div style="padding-top: 2rem;">
         <button @click="clear">
-        <img src="trash.svg" alt="Clear" class="button__icon">
+        <img src="/trash.svg" alt="Clear" class="button__icon">
         Clear</button>
       <button @click="save">
-        <img src="download.svg" alt="Clear" class="button__icon">
+        <img src="/download.svg" alt="Clear" class="button__icon">
         Save</button>
       <span>x{{ scale.toFixed(2) }}</span>
 
