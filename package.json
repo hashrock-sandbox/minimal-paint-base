@@ -1,20 +1,19 @@
 {
   "name": "minimal-paint-base",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "parcel index.html",
-    "build": "parcel build index.html"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^2.6.12",
-    "vue-hot-reload-api": "^2.3.4"
+    "paintvec": "^0.4.0",
+    "vue": "^3.2.37"
   },
   "devDependencies": {
-    "@vue/component-compiler-utils": "^3.2.0",
-    "paintvec": "^0.3.0",
-    "parcel": "^1.12.4",
-    "vue-template-compiler": "^2.6.12"
+    "@vitejs/plugin-vue": "^3.0.3",
+    "vite": "^3.0.7"
   }
 }
